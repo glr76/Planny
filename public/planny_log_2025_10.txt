@@ -35,3 +35,7 @@
 [9:46:32 AM] UPDATE 13-10-2025, Raffaele,a -> AQ2465
 [9:46:39 AM] DELETE 13-10-2025, Fabrizio,a
 [9:46:39 AM] Celle cancellate.
+[9:46:41 AM] DELETE 13-10-2025, Gabriele,a
+[9:46:41 AM] Celle cancellate.
+[9:46:43 AM] DELETE 13-10-2025, Michelangelo,a
+[9:46:43 AM] Celle cancellate.

@@ -33,3 +33,5 @@
 [9:46:30 AM] UPDATE 13-10-2025, Alfredo,a -> AQ2465
 [9:46:32 AM] SET 13-10-2025, Raffaele,a
 [9:46:32 AM] UPDATE 13-10-2025, Raffaele,a -> AQ2465
+[9:46:39 AM] DELETE 13-10-2025, Fabrizio,a
+[9:46:39 AM] Celle cancellate.

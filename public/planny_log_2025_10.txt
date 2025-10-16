@@ -18,3 +18,5 @@
 [9:45:52 AM] SET 13-10-2025, Michelangelo,a
 [9:45:53 AM] SET 13-10-2025, Fabio,a
 [9:45:58 AM] SET 13-10-2025, Alfredo,a
+[9:46:08 AM] DELETE 13-10-2025, Raffaele,a
+[9:46:08 AM] Celle cancellate.

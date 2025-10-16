@@ -3,3 +3,5 @@
 [8:33:31 AM] SET 17-10-2025, Gabriele,ciao
 [8:33:47 AM] SET 17-10-2025, Michelangelo,pupp
 [8:33:51 AM] SET 17-10-2025, Fabio,azzo
+[8:38:25 AM] DELETE 17-10-2025, Fabio,azzo
+[8:38:25 AM] Celle cancellate.

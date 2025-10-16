@@ -43,3 +43,5 @@
 [9:46:45 AM] Celle cancellate.
 [9:46:49 AM] DELETE 13-10-2025, Alfredo,AQ2465
 [9:46:49 AM] Celle cancellate.
+[9:46:51 AM] DELETE 13-10-2025, Raffaele,AQ2465
+[9:46:51 AM] Celle cancellate.

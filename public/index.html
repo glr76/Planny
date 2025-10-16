@@ -1230,6 +1230,7 @@ tdCount.className = 'count led ' + countClass(filled, names.length);
 tdCount.innerHTML = '<span class="dot" aria-hidden="true"></span>';
 tdCount.title = `${filled}/${names.length}`;
 tr.appendChild(tdCount);
+tbody.appendChild(tr);
 
     }
     return tbody;

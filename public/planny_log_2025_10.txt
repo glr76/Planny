@@ -22,3 +22,5 @@
 [9:46:08 AM] Celle cancellate.
 [9:46:11 AM] DELETE 13-10-2025, Alfredo,a
 [9:46:11 AM] Celle cancellate.
+[9:46:16 AM] DELETE 13-10-2025, Fabio,a
+[9:46:16 AM] Celle cancellate.

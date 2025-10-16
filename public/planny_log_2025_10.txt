@@ -39,3 +39,5 @@
 [9:46:41 AM] Celle cancellate.
 [9:46:43 AM] DELETE 13-10-2025, Michelangelo,a
 [9:46:43 AM] Celle cancellate.
+[9:46:45 AM] DELETE 13-10-2025, Fabio,AQ2465
+[9:46:45 AM] Celle cancellate.

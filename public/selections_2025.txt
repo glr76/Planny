@@ -5,4 +5,4 @@
 13-10-2025,Giuseppe,a
 13-10-2025,Lorenzo,a
 13-10-2025,Michelangelo,a
-13-10-2025,Raffaele,a
+13-10-2025,Raffaele,__DEL__

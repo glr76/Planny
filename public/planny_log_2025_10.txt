@@ -8,3 +8,5 @@
 [8:41:52 AM] SET 17-10-2025, Fabio,pippo
 [09:02:38] DELETE 17-10-2025, Michelangelo,pupp
 [09:02:38] Celle cancellate.
+[9:04:01 AM] DELETE 17-10-2025, Fabrizio,ciao
+[9:04:01 AM] Celle cancellate.

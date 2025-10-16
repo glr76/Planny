@@ -2,7 +2,7 @@
 13-10-2025,Fabio,__DEL__
 13-10-2025,Fabrizio,__DEL__
 13-10-2025,Gabriele,__DEL__
-13-10-2025,Giuseppe,a
-13-10-2025,Lorenzo,a
+13-10-2025,Giuseppe,__DEL__
+13-10-2025,Lorenzo,__DEL__
 13-10-2025,Michelangelo,__DEL__
 13-10-2025,Raffaele,__DEL__

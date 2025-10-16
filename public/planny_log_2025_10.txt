@@ -26,3 +26,4 @@
 [9:46:16 AM] Celle cancellate.
 [9:46:20 AM] DELETE 13-10-2025, Michelangelo,a
 [9:46:20 AM] Celle cancellate.
+[9:46:26 AM] SET 13-10-2025, Michelangelo,a

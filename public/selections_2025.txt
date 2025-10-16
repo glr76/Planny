@@ -1,7 +1,7 @@
 13-10-2025,Alfredo,AQ2465
 13-10-2025,Fabio,AQ2465
 13-10-2025,Fabrizio,__DEL__
-13-10-2025,Gabriele,a
+13-10-2025,Gabriele,__DEL__
 13-10-2025,Giuseppe,a
 13-10-2025,Lorenzo,a
 13-10-2025,Michelangelo,a

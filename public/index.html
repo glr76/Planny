@@ -378,6 +378,47 @@ td, th {padding: 2px 4px;}
     ctx.style.display = 'block';
   };
 </script>
+<script>
+// === Inizializza gestione click menu contestuale ===
+(function initCtxMenu(){
+  const menu = document.getElementById('ctx');
+  if (!menu || menu.__bound) return; // evita doppio bind
+
+  menu.addEventListener('click', async (e)=>{
+    const it = e.target.closest('.itm');
+    if(!it) return;
+
+    const cmd = it.dataset.cmd;
+    let td = state.ctxTarget;
+
+    // Se nessuna cella è selezionata, forza selezione su quella del menu
+    if (td && (!state.selected || state.selected.size === 0)) {
+      ensureSelectionOn(td);
+    }
+
+    if(!td){
+      hideCtx();
+      return;
+    }
+
+    // 🔹 Gestione comandi
+    if (cmd === 'copy'){
+      copySelectionToClipboard();
+    } 
+    else if (cmd === 'paste'){
+      pasteFromClipboardAt(td);
+    } 
+    else if (cmd === 'clear'){
+      writeCell(td, '');
+      if (typeof scheduleAutoSave === 'function') scheduleAutoSave();
+    }
+
+    hideCtx(); // chiudi sempre il menu
+  });
+
+  menu.__bound = true; // flag per non ricollegare
+})();
+</script>
 
 <script>
 (function(){
@@ -962,7 +1003,41 @@ function makeCell(date,name){
     td.addEventListener('dragleave', ()=> td.classList.remove('droptarget'));
     td.addEventListener('drop', e=>{
       e.preventDefault(); td.classList.remove('droptarget');
-      const payload=e.dataTransfer.getData('application/x-planny'); if(!payload) return;
+    // --- Context menu su DESKTOP (right-click)
+td.addEventListener('contextmenu', (e)=>{
+  e.preventDefault();
+  const r = td.getBoundingClientRect();
+  const cx = e.clientX || (r.left + r.width/2);
+  const cy = e.clientY || (r.top  + r.height/2);
+  openCtxForCell(td, cx, cy);
+});
+
+// --- Long-press su MOBILE / iOS
+let lpTimer = null;
+td.addEventListener('touchstart', (e)=>{
+  // non blocchiamo lo scroll: listener passive
+  const t = e.touches && e.touches[0];
+  if(!t) return;
+  lpTimer = setTimeout(()=>{
+    const r = td.getBoundingClientRect();
+    const cx = t.clientX || (r.left + r.width/2);
+    const cy = t.clientY || (r.top  + r.height/2);
+    openCtxForCell(td, cx, cy);
+  }, 500); // ~0.5s long-press
+}, {passive:true});
+
+function cancelLongPress(){
+  if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; }
+}
+td.addEventListener('touchmove',  cancelLongPress, {passive:true});
+td.addEventListener('touchend',   cancelLongPress, {passive:true});
+td.addEventListener('touchcancel',cancelLongPress, {passive:true});
+  
+	  
+	  
+	  
+	  
+	  const payload=e.dataTransfer.getData('application/x-planny'); if(!payload) return;
       let data=null; try{data=JSON.parse(payload);}catch(_){}
       if(!data) return;
       const fromKey=data.fromKey, value=data.value, toKey=td.dataset.key;
@@ -999,34 +1074,43 @@ function makeCell(date,name){
   }
 
   function syncChip(td){
-    const input=td.querySelector('input'), chip=td.querySelector('.chip');
-    const val=(input.value||'').trim();
-    if(td.classList.contains('editing')){ chip.classList.add('hidden'); input.classList.remove('hidden'); return; }
-    if(val){
-      chip.textContent=val;
-	  // pulsante "⋯" per aprire il menu con un tap
-if(!chip.querySelector('.more')){
-  const btn=document.createElement('button');
-  btn.className='more'; btn.type='button'; btn.textContent='⋯';
-  btn.addEventListener('click',(e)=>{
-    e.stopPropagation();
-    const r = btn.getBoundingClientRect();
-    const x = r.right, y = r.bottom + 2;
-    window.state.ctxTarget = td;
-    showCtx(x,y);
-  });
-  chip.appendChild(btn);
-}
-      chip.title = val;
-      let klass='chip '+styleToken(val);
-      const parts=td.dataset.date.split('-'); const d=new Date(+parts[2], +parts[1]-1, +parts[0]);
-      if(isHolidayOrWeekend(d)) klass+=' holiday';
-      chip.className=klass; chip.classList.remove('hidden'); input.classList.add('hidden');
-    }else{
-      chip.removeAttribute('title');
-      chip.textContent=''; chip.className='chip hidden'; input.classList.remove('hidden');
-    }
+  const input = td.querySelector('input');
+  const chip  = td.querySelector('.chip');
+  const val   = (input.value || '').trim();
+
+  // Se la cella è in editing, mostra l'input e nascondi il chip
+  if(td.classList.contains('editing')){
+    chip.classList.add('hidden');
+    input.classList.remove('hidden');
+    return;
   }
+
+  // Se c'è un valore, mostra il chip con il testo
+  if(val){
+    chip.textContent = val;
+    chip.title = val;
+
+    // Assegna le classi di stile (colori ecc.)
+    let klass = 'chip ' + styleToken(val);
+    const parts = td.dataset.date.split('-');
+    const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+    if(isHolidayOrWeekend(d)) klass += ' holiday';
+    chip.className = klass;
+
+    chip.classList.remove('hidden');
+    input.classList.add('hidden');
+
+    // ❌ niente più bottone “⋯” (rimosso del tutto)
+  }
+  else {
+    // se non c'è valore, mostra l'input vuoto
+    chip.removeAttribute('title');
+    chip.textContent = '';
+    chip.className = 'chip hidden';
+    input.classList.remove('hidden');
+  }
+}
+
 
   // Espongo importer selections per year_single_selector.js
   function refreshCellByKey(key){
@@ -1383,6 +1467,20 @@ function scheduleAutoSave(delayMs = 800){
     grid.forEach(r=>{ if(r.length<w) r.push(...Array(w-r.length).fill('')); });
     return {grid, w, h:grid.length};
   }
+  // === Helpers per context menu / selezione ===
+function ensureSelectionOn(td){
+  if(!td || !td.classList.contains('cell')) return;
+  clearSelection();
+  addToSelection(td);
+  state.anchorCell = td;
+}
+
+function openCtxForCell(td, x, y){
+  ensureSelectionOn(td);
+  state.ctxTarget = td;
+  showCtx(x, y);
+}
+  
   async function copySelectionToClipboard(){
     if(state.selected.size===0){ log('Nessuna cella selezionata.','warn'); return; }
     const {grid} = gridFromSelection();

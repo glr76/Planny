@@ -819,23 +819,53 @@ async function saveSelectionsToServer(){
     }
   }
 
-  // Espongo importer selections per year_single_selector.js
-  
 
-  /* ------- Editing / Commit ------- */
-  function enterEdit(td, selectAll = true){
-    td.classList.add('editing');
-    const input=td.querySelector('input'), chip=td.querySelector('.chip');
-    chip.classList.add('hidden'); input.classList.remove('hidden');
-    input.dataset.orig=input.value; setTimeout(()=>{input.focus(); 
-	if (selectAll) {
-     input.select();
-   } else {
-     const end = input.value.length;
-     input.setSelectionRange(end, end);
-   }
-	suggest.open(input);},0);
+function enterEdit(td, selectAll = true) {
+  // retro-compatibilità + supporto opzioni oggetto: {selectAll, initialChar}
+  let initialChar = null;
+  if (typeof selectAll === 'object' && selectAll !== null) {
+    const opts = selectAll;
+    initialChar = opts.initialChar ?? null;
+    selectAll = (opts.selectAll !== undefined) ? !!opts.selectAll : true;
   }
+
+  td.classList.add('editing');
+  const input = td.querySelector('input');
+  const chip  = td.querySelector('.chip');
+
+  if (chip) chip.classList.add('hidden');
+  if (input) input.classList.remove('hidden');
+
+  if (input) {
+    input.dataset.orig = input.value;
+
+    // ⏱️ Importantissimo: focus e caret dopo il paint
+    setTimeout(() => {
+      input.focus();
+
+      if (selectAll) {
+        // F2 / doppio click: seleziona tutto
+        input.select();
+      } else {
+        // Tasto stampabile: inseriamo SUBITO il primo carattere
+        if (initialChar != null) {
+          input.value = String(initialChar);
+        }
+        // caret in coda
+        try {
+          const end = input.value.length;
+          input.setSelectionRange(end, end);
+        } catch(_) {}
+      }
+
+      // riapri i suggerimenti sul valore corrente
+      if (typeof suggest?.open === 'function') {
+        suggest.open(input);
+      }
+    }, 0);
+  }
+}
+
   function onCellCommit(input){
     // delega a writeCell per garantire logging unico
     const td = input.closest('td.cell');
@@ -1465,33 +1495,32 @@ document.addEventListener('keydown', (e)=>{
         if(state.search.q) buildSearchHits(state.search.q);
       }
     }
-    // START EDITING
    
+   
+// START EDITING
 if(!inEditing && !isFormEl){
   const td = state.anchorCell || (state.selected.size ? Array.from(state.selected)[0] : null);
   if(td && td.classList.contains('cell')){
     const key = e.key;
     const isPrintable = key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
     const isF2 = key === 'F2';
+
     if(isPrintable || isF2){
       e.preventDefault();
 
-      // 👇 F2/doppio click mantengono "seleziona tutto", tasto stampabile NO
-      enterEdit(td, /*selectAll=*/ !isPrintable);
-
-      const input = td.querySelector('input');
-      if(isPrintable && input){
-        input.value = key;
-        // assicura caret in coda (non selezionare tutto)
-        try {
-          const end = input.value.length;
-          input.setSelectionRange(end, end);
-        } catch(_){}
+      if (isF2) {
+        // F2: entra in edit e seleziona tutto
+        enterEdit(td, { selectAll: true, initialChar: null });
+      } else {
+        // Tasto stampabile: entra in edit SENZA selezionare tutto
+        // e inietta in modo affidabile il primo carattere
+        enterEdit(td, { selectAll: false, initialChar: key });
       }
       return;
     }
   }
 }
+
 
 
     // Close context menu on ESC

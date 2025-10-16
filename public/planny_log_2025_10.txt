@@ -12,3 +12,5 @@
 [9:04:01 AM] Celle cancellate.
 [9:21:32 AM] DELETE 17-10-2025, Gabriele,ciao
 [9:21:32 AM] Celle cancellate.
+[9:45:47 AM] SET 13-10-2025, Giuseppe,a
+[9:45:48 AM] SET 13-10-2025, Lorenzo,a

@@ -62,12 +62,6 @@ td, th {padding: 2px 4px;}
   overflow: hidden;
 }
 
-.tab {
-  flex: 1 1 auto;                 /* i bottoni si adattano */
-  text-align: center;
-  padding: 8px 0;
-  min-width: 0;
-}
 
 /* --- Area destra con pulsanti ricerca, oggi, download --- */
 .bar-right {
@@ -89,29 +83,7 @@ td, th {padding: 2px 4px;}
     order: 1;                     /* i mesi restano in alto */
   }
 }
-  /* Tutti i mesi su una riga orizzontale */
 
-.tab {
-  flex: 1 1 auto;                   /* i bottoni si ridimensionano per entrare tutti */
-  text-align: center;
-  padding: 8px 0;                   /* riduce altezza per schermi piccoli */
-  min-width: 0;                     /* permette di comprimere i bottoni */
-}
-
-/* Mantieni lo stile per il mese attivo */
-.tab.active {
-  background: var(--accent);
-  color: #07121f;
-  border-color: transparent;
-}
-
-/* Responsive: su schermi stretti i bottoni diventano più piccoli */
-@media (max-width: 768px) {
-  .tab {
-    font-size: 12px;
-    padding: 6px 0;
-  }
-}
 
   .tab{padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-weight:600;color:#5b6877}
   .tab.active{background:var(--accent);color:#07121f;border-color:transparent}
@@ -189,19 +161,7 @@ td, th {padding: 2px 4px;}
     border-radius: 8px;          /* più compatto */
   }
 }
-  .chip:active{cursor:grabbing}
-  .chip.ts1{color:#ef4444} .chip.ts2{color:#3b82f6}
-  .chip.att{color:#f59e0b} .chip.training{color:#0ea5e9} .chip.rec{color:#8b5cf6}
-  .chip.holiday{background:var(--holiday); color:#fff}
-  .chip.hidden{display:none}
-  .chip .more{
-  position:absolute; right:4px; top:4px;
-  border:0; background:transparent; padding:2px 4px;
-  font-weight:900; line-height:1; cursor:pointer; opacity:.6;
-}
-.chip .more:hover,.chip .more:focus{ opacity:1; }
-@media (hover:none){ .chip .more{ opacity:.9; } }
-
+  
   .droptarget{outline:2px dashed #3aa0ff; outline-offset:-3px}
   .dragging{opacity:.8; transform:scale(0.99)}
   .hidden{display:none}
@@ -224,14 +184,6 @@ td, th {padding: 2px 4px;}
   .ctx .itm{padding:8px 10px; border-radius:8px; cursor:pointer; user-select:none}
   .ctx .itm:hover,.ctx .itm:focus{background:#1b2532; outline:none}
   .ctx .sep{height:1px; background:#233042; margin:6px 4px}
-  .ln.ln-cell{ background: transparent; padding: 0; margin: 2px 0; }
-  .terminal .ln{ background: transparent !important; }
-  .terminal .ln.ln-cell{ background: transparent !important; padding: 0; margin: 2px 0; }
-#calendar { table-layout: fixed; width:100%; border-collapse: separate; border-spacing: 0; }
-th.datecol, td.datecol {width:100px; min-width:100px; max-width:100px;}
-td, th {padding: 2px 4px;}
-#calendar-container {margin-left:0;margin-right:0;padding-left:4px;padding-right:4px;max-width:100%;}
-#calendar {margin-left:0;margin-right:0;}
 
 /* Elimina bordo doppio che causa la “riga fantasma” */
 #calendar tbody td {
@@ -627,41 +579,7 @@ async function appendLogsToServer(opts={force:false}){
     await putTextToServer(name, merged);
     log('Log aggiornato (PUT) su server: '+name, 'ok');
     __SaveTracker.ok(taskId);
-	async function purgeMonthlyLogsKeepPrevAndCurrent(){
-  try{
-    const today  = new Date();
-    const curY   = state.year || today.getFullYear();
-    const curM   = today.getMonth() + 1;
-    const { y: prevY, m: prevM } = prevMonthTuple(today);
-
-    const keep = new Set([
-      `planny_log_${prevY}_${String(prevM).padStart(2,'0')}.txt`,
-      `planny_log_${curY}_${String(curM).padStart(2,'0')}.txt`,
-    ]);
-
-    // Limitiamoci ad anno corrente + precedente (basta per retention)
-    const years = new Set([curY, curY - 1]);
-
-    for (const Y of years){
-      for (let M=1; M<=12; M++){
-        const fname = `planny_log_${Y}_${String(M).padStart(2,'0')}.txt`;
-        if (!keep.has(fname)){
-          try{
-            await putTextToServer(fname, ''); // tronca (se non esiste, ignora)
-			// Avvia retention una sola volta per sessione: tieni SOLO mese precedente + mese corrente
-if (!window.__logPurgeDoneForSession){
-  window.__logPurgeDoneForSession = true;
-  purgeMonthlyLogsKeepPrevAndCurrent();
-}
-
-          }catch(_){}
-        }
-      }
-    }
-  }catch(e){
-    log('Errore purgeMonthlyLogs: ' + (e.message||e), 'warn');
-  }
-}
+	
   }catch(err){
     __SaveTracker.fail(taskId, err);
     throw err; // nessun fallback locale
@@ -1001,41 +919,50 @@ function makeCell(date,name){
 
     td.addEventListener('dragover', e=>{ e.preventDefault(); td.classList.add('droptarget'); });
     td.addEventListener('dragleave', ()=> td.classList.remove('droptarget'));
-    td.addEventListener('drop', e=>{
-      e.preventDefault(); td.classList.remove('droptarget');
-    // --- Context menu su DESKTOP (right-click)
-td.addEventListener('contextmenu', (e)=>{
+	// --- DROP: gestisce MOVE / SWAP dei chip ---
+td.addEventListener('drop', (e)=>{
   e.preventDefault();
-  const r = td.getBoundingClientRect();
-  const cx = e.clientX || (r.left + r.width/2);
-  const cy = e.clientY || (r.top  + r.height/2);
-  openCtxForCell(td, cx, cy);
+  td.classList.remove('droptarget');
+
+  const payload = e.dataTransfer.getData('application/x-planny');
+  if(!payload) return;
+
+  let data = null;
+  try { data = JSON.parse(payload); } catch(_) {}
+  if(!data) return;
+
+  const fromKey = data.fromKey;
+  const value   = data.value;
+  const toKey   = td.dataset.key;
+  if(fromKey === toKey) return;
+
+  const prev = state.selections.get(toKey) || '';
+
+  if(e.shiftKey && prev){
+    // SWAP
+    state.selections.set(fromKey, prev);
+    state.selections.set(toKey, value);
+    const [fDate,fName] = fromKey.split(',');
+    const [tDate,tName] = toKey.split(',');
+    logAction('SWAP', fDate, fName, value, `⇄ ${tDate}, ${tName},${prev}`);
+    refreshCellByKey(fromKey);
+    refreshCellByKey(toKey);
+  } else {
+    // MOVE (con eventuale overwrite)
+    state.selections.delete(fromKey);
+    if(value) state.selections.set(toKey, value);
+    const [fDate,fName] = fromKey.split(',');
+    const [tDate,tName] = toKey.split(',');
+    logAction('MOVE', fDate, fName, value, `→ ${tdate}, ${tName}${prev ? ',(overwrite '+prev+')' : ''}`);
+    refreshCellByKey(fromKey);
+    refreshCellByKey(toKey);
+  }
+
+  scheduleAutoSave();
 });
 
-// --- Long-press su MOBILE / iOS
-let lpTimer = null;
-td.addEventListener('touchstart', (e)=>{
-  // non blocchiamo lo scroll: listener passive
-  const t = e.touches && e.touches[0];
-  if(!t) return;
-  lpTimer = setTimeout(()=>{
-    const r = td.getBoundingClientRect();
-    const cx = t.clientX || (r.left + r.width/2);
-    const cy = t.clientY || (r.top  + r.height/2);
-    openCtxForCell(td, cx, cy);
-  }, 500); // ~0.5s long-press
-}, {passive:true});
 
-function cancelLongPress(){
-  if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; }
-}
-td.addEventListener('touchmove',  cancelLongPress, {passive:true});
-td.addEventListener('touchend',   cancelLongPress, {passive:true});
-td.addEventListener('touchcancel',cancelLongPress, {passive:true});
-  
-	  
-	  
-	  
+
 	  
 	  const payload=e.dataTransfer.getData('application/x-planny'); if(!payload) return;
       let data=null; try{data=JSON.parse(payload);}catch(_){}
@@ -1060,7 +987,34 @@ td.addEventListener('touchcancel',cancelLongPress, {passive:true});
       }
       scheduleAutoSave();
     });
+// --- Context menu su DESKTOP (right-click)
+td.addEventListener('contextmenu', (e)=>{
+  e.preventDefault();
+  const r = td.getBoundingClientRect();
+  const cx = e.clientX || (r.left + r.width/2);
+  const cy = e.clientY || (r.top  + r.height/2);
+  openCtxForCell(td, cx, cy);
+});
 
+// --- Long-press su MOBILE / iOS
+let lpTimer = null;
+td.addEventListener('touchstart', (e)=>{
+  const t = e.touches && e.touches[0];
+  if(!t) return;
+  lpTimer = setTimeout(()=>{
+    const r = td.getBoundingClientRect();
+    const cx = t.clientX || (r.left + r.width/2);
+    const cy = t.clientY || (r.top  + r.height/2);
+    openCtxForCell(td, cx, cy);
+  }, 500);
+}, {passive:true});
+
+function cancelLongPress(){
+  if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; }
+}
+td.addEventListener('touchmove',  cancelLongPress, {passive:true});
+td.addEventListener('touchend',   cancelLongPress, {passive:true});
+td.addEventListener('touchcancel',cancelLongPress, {passive:true});
     chip.addEventListener('dragstart', e=>{
       chip.classList.add('dragging');
       const key=td.dataset.key;
@@ -1403,12 +1357,7 @@ let __saveTimer = null;
 window.logFlushCursor = (window.logFlushCursor ?? 0);
 window.logBuffer = (window.logBuffer ?? []);
 
-function normSelectionsText(s){
-  return String(s||'')
-    .replace(/\r\n/g, '\n')      // CRLF -> LF
-    .replace(/[ \t]+$/gm, '')    // spazi a fine riga
-    .trim();
-}
+
 
 /* ------- AutoSave (debounce + coalescing) ------- */
 async function saveNow(){

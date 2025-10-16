@@ -1075,41 +1075,91 @@ td.addEventListener('touchcancel',cancelLongPress, {passive:true});
 
   function syncChip(td){
   const input = td.querySelector('input');
-  const chip  = td.querySelector('.chip');
+  const chip  = td.querySelector('chip') ? td.querySelector('chip') : td.querySelector('.chip'); // safety
   const val   = (input.value || '').trim();
 
-  // Se la cella è in editing, mostra l'input e nascondi il chip
-  if(td.classList.contains('editing')){
+  // Se in editing: mostra input, nascondi chip
+  if (td.classList.contains('editing')) {
     chip.classList.add('hidden');
     input.classList.remove('hidden');
     return;
   }
 
-  // Se c'è un valore, mostra il chip con il testo
-  if(val){
+  if (val) {
+    // Testo + tooltip
     chip.textContent = val;
     chip.title = val;
 
-    // Assegna le classi di stile (colori ecc.)
+    // Classi di stile
     let klass = 'chip ' + styleToken(val);
     const parts = td.dataset.date.split('-');
     const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
-    if(isHolidayOrWeekend(d)) klass += ' holiday';
+    if (isHolidayOrWeekend(d)) klass += ' holiday';
     chip.className = klass;
 
     chip.classList.remove('hidden');
     input.classList.add('hidden');
 
-    // ❌ niente più bottone “⋯” (rimosso del tutto)
-  }
-  else {
-    // se non c'è valore, mostra l'input vuoto
+    // ✅ BIND UNA SOLA VOLTA gli handler specifici del chip
+    if (!chip.__ctxBound) {
+      chip.__ctxBound = true;
+
+      // Doppio click = entra in edit (desktop)
+      chip.addEventListener('dblclick', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        enterEdit(td, { selectAll: true, initialChar: null });
+      });
+
+      // Tap singolo su device touch = entra in edit (qualità di vita)
+      chip.addEventListener('click', (e)=>{
+        if (window.matchMedia('(pointer: coarse)').matches) {
+          e.preventDefault();
+          e.stopPropagation();
+          enterEdit(td, { selectAll: false, initialChar: null });
+        }
+      });
+
+      // 👉 Context menu su DESKTOP (tasto destro)
+      chip.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const r = chip.getBoundingClientRect();
+        const cx = e.clientX || (r.left + r.width/2);
+        const cy = e.clientY || (r.top  + r.height/2);
+        openCtxForCell(td, cx, cy); // seleziona + apre menu
+      });
+
+      // 👉 Long-press su iOS / mobile
+      let lpTimer = null;
+      const cancelLP = ()=>{ if (lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+
+      chip.addEventListener('touchstart', (e)=>{
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        cancelLP();
+        lpTimer = setTimeout(()=>{
+          const r = chip.getBoundingClientRect();
+          const cx = t.clientX || (r.left + r.width/2);
+          const cy = t.clientY || (r.top  + r.height/2);
+          openCtxForCell(td, cx, cy); // seleziona + apre menu
+        }, 500); // 0.5s
+      }, { passive: true });
+
+      chip.addEventListener('touchmove',  cancelLP, { passive: true });
+      chip.addEventListener('touchend',   cancelLP, { passive: true });
+      chip.addEventListener('touchcancel',cancelLP, { passive: true });
+    }
+
+  } else {
+    // Nessun valore: mostra input
     chip.removeAttribute('title');
     chip.textContent = '';
     chip.className = 'chip hidden';
     input.classList.remove('hidden');
   }
 }
+
 
 
   // Espongo importer selections per year_single_selector.js

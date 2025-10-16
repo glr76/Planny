@@ -10,3 +10,5 @@
 [09:02:38] Celle cancellate.
 [9:04:01 AM] DELETE 17-10-2025, Fabrizio,ciao
 [9:04:01 AM] Celle cancellate.
+[9:21:32 AM] DELETE 17-10-2025, Gabriele,ciao
+[9:21:32 AM] Celle cancellate.
